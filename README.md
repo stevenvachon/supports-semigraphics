@@ -1,5 +1,7 @@
 # supports-semigraphics [![NPM Version][npm-image]][npm-url] [![Build Status][travis-image]][travis-url]
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/stevenvachon/supports-semigraphics.svg)](https://greenkeeper.io/)
+
 > Determine if your terminal supports text animations.
 
 Some environments try to simulate a TTY which can bugger up logs with your [semigraphic animations](https://en.wikipedia.org/wiki/Semigraphics).
