@@ -7,7 +7,7 @@
   "repository": "stevenvachon/supports-semigraphics",
   "browser": "browser.js",
   "dependencies": {
-    "has-flag": "^2.0.0",
+    "has-flag": "^3.0.0",
     "has-unicode": "^2.0.1"
   },
   "devDependencies": {
