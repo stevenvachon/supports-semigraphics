@@ -1,37 +1,59 @@
 "use strict";
-const expect = require("chai").expect;
-const stream = require("stream");
+const {beforeEach, it} = require("mocha");
+const {Duplex, Writable} = require("stream");
+const {expect} = require("chai");
 const supportsSemigraphics = require("./");
 
-const argv = process.argv;
-const env = process.env;
-const stderr_isTTY = process.stderr.isTTY;
-const stdout_isTTY = process.stdout.isTTY;
-
-delete env.CI;
-delete env.CONTINUOUS_INTEGRATION;
 
 
+const env = (custom, base=ENV) => Object.entries(base)
+	.filter(([key]) => key !== "CI")
+	.reduce((result, [key, value]) =>
+	{
+		result[key] = value;
+		return result;
+	}, {...custom});
 
-beforeEach( function()
+
+
+const ARGV = process.argv;
+const ENV = env(null, process.env);
+const STDERR_IS_TTY = process.stderr.isTTY;
+const STDOUT_IS_TTY = process.stdout.isTTY;
+
+
+
+beforeEach(() =>
 {
-	process.argv = argv;
-	process.env = env;
-	process.stderr.isTTY = stderr_isTTY;
-	process.stdout.isTTY = stdout_isTTY;
+	process.argv = ARGV;
+	process.env = ENV;
+	process.stderr.isTTY = STDERR_IS_TTY;
+	process.stdout.isTTY = STDOUT_IS_TTY;
 });
 
 
 
-it("supports FORCE_ANIMATION", function()
+it("supports FORCE_ANIMATION", () =>
 {
-	process.env = { FORCE_ANIMATION:true };
+	process.env = env({ FORCE_ANIMATION:"" });
 	expect( supportsSemigraphics() ).to.be.true;
+
+	process.env = env({ FORCE_ANIMATION:"true" });
+	expect( supportsSemigraphics() ).to.be.true;
+
+	process.env = env({ FORCE_ANIMATION:"false" });
+	expect( supportsSemigraphics() ).to.be.false;
+
+	process.env = env({ FORCE_ANIMATION:"1" });
+	expect( supportsSemigraphics() ).to.be.true;
+
+	process.env = env({ FORCE_ANIMATION:"0" });
+	expect( supportsSemigraphics() ).to.be.false;
 });
 
 
 
-it("supports --animation", function()
+it("supports --animation", () =>
 {
 	process.argv = ["--animation"];
 	expect( supportsSemigraphics() ).to.be.true;
@@ -44,35 +66,25 @@ it("supports --animation", function()
 
 	process.argv = ["--animation=always"];
 	expect( supportsSemigraphics() ).to.be.true;
-});
 
-
-
-it("supports --animations", function()
-{
 	process.argv = ["--animations"];
 	expect( supportsSemigraphics() ).to.be.true;
 });
 
 
 
-it("supports --no-animation", function()
+it("supports --no-animation", () =>
 {
 	process.argv = ["--no-animation"];
 	expect( supportsSemigraphics() ).to.be.false;
-});
 
-
-
-it("supports --no-animations", function()
-{
 	process.argv = ["--no-animations"];
 	expect( supportsSemigraphics() ).to.be.false;
 });
 
 
 
-it("prioritizes --no-animation over --animation", function()
+it("prioritizes --no-animation over --animation", () =>
 {
 	process.argv = ["--no-animation", "--animation"];
 	expect( supportsSemigraphics() ).to.be.false;
@@ -80,43 +92,40 @@ it("prioritizes --no-animation over --animation", function()
 
 
 
-it("prioritizes FORCE_ANIMATION over --no-animation", function()
+it("prioritizes FORCE_ANIMATION over --no-animation", () =>
 {
 	process.argv = ["--no-animation"];
-	process.env = { FORCE_ANIMATION:true };
+	process.env = env({ FORCE_ANIMATION:"true" });
 	expect( supportsSemigraphics() ).to.be.true;
 });
 
 
 
-it("rejects CI environments", function()
+it("rejects CI environments", () =>
 {
-	process.env = { CI:true };
-	expect( supportsSemigraphics() ).to.be.false;
-
-	process.env = { CONTINUOUS_INTEGRATION:true };
+	process.env = env({ CI:"true" });
 	expect( supportsSemigraphics() ).to.be.false;
 });
 
 
 
-it("rejects non-TTY stderr", function()
+it("rejects non-TTY stderr", () =>
 {
 	process.stderr.isTTY = false;
-	expect( supportsSemigraphics() ).to.be.false;
+	expect( supportsSemigraphics(process.stderr) ).to.be.false;
 });
 
 
 
-it("rejects non-TTY stdout", function()
+it("rejects non-TTY stdout", () =>
 {
 	process.stdout.isTTY = false;
-	expect( supportsSemigraphics() ).to.be.false;
+	expect( supportsSemigraphics(process.stdout) ).to.be.false;
 });
 
 
 
-it("supports TTY streams", function()
+it("supports TTY streams", () =>
 {
 	process.stderr.isTTY = true;
 	process.stdout.isTTY = false;
@@ -129,8 +138,8 @@ it("supports TTY streams", function()
 
 
 
-it("rejects non-TTY streams", function()
+it("rejects non-TTY streams", () =>
 {
-	expect( supportsSemigraphics( new stream.Duplex() ) ).to.be.false;
-	expect( supportsSemigraphics( new stream.Writable() ) ).to.be.false;
+	expect( supportsSemigraphics( new Duplex() ) ).to.be.false;
+	expect( supportsSemigraphics( new Writable() ) ).to.be.false;
 });
